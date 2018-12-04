@@ -65,7 +65,7 @@ const createOrGetIndex = async (
         ...Object.keys(fieldResolvers).reduce((prev, key) => {
           return {
             ...prev,
-            [key]: fieldResolvers[key](pageNode),
+            [key]: fieldResolvers[key](pageNode, getNode),
           }
         }, {}),
       }
@@ -102,7 +102,7 @@ exports.sourceNodes = async ({ getNodes, actions }) => {
   existingNodes.forEach(n => touchNode({ nodeId: n.id }))
 }
 
-exports.onCreateNode = ({ node, actions, getNode }, { resolvers }) => {
+exports.onCreateNode = ({ node, actions, getNode }, { resolvers, filter }) => {
   if (Object.keys(resolvers).indexOf(node.internal.type) === -1) {
     return
   }
@@ -120,6 +120,9 @@ exports.setFieldsOnGraphQLNodeType = (
   if (type.name !== SEARCH_INDEX_TYPE) {
     return null
   }
+
+  // allow user to not add nodes to the index based on props from the node
+  if (filter && !filter(node, getNode)) { return; }
 
   return {
     index: {
